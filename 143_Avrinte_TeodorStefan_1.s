@@ -20,70 +20,95 @@
     valoare3: .space 4
     ct1: .space 4
     ct: .space 4
-    formatScanf: .asciz "%d"
-    formatPrintf: .asciz "%d "
     newLine: .asciz "\n"
+    inputFilePointer: .long 0
+    outputFilePointer: .long 0
+    inputFile: .asciz "in.txt"
+    outputFile: .asciz "out.txt"
+    w: .ascii "w"
+    r: .ascii "r"
+    formatPrintf: .asciz "%d "
+    formatScanf: .asciz "%d"
 .text
 
 .global main
 
 main:
-    push $m
-    push $formatScanf
-    call scanf
-    addl $8,%esp
+   pushl $w
+   pushl $outputFile
+   call fopen
+   addl $8,%esp
+   movl %eax,outputFilePointer 
+ 
+   pushl $r
+   pushl $inputFile
+   call fopen
+   addl $8,%esp
+   movl %eax,inputFilePointer
 
-    push $n
-    push $formatScanf
-    call scanf
-    addl $8,%esp
-    
-    push $p
-    push $formatScanf
-    call scanf
-    addl $8,%esp
-
-    movl $0, index
-    movl m,%ebx
-    movl %ebx,mCopy
-    movl n,%ebx
-    movl %ebx,nCopy
-    addl $2,mCopy
-    addl $2,nCopy
+   push $m
+   push $formatScanf
+   pushl inputFilePointer
+   call fscanf
+   addl $12,%esp
+   
+   push $n
+   push $formatScanf
+   pushl inputFilePointer
+   call fscanf
+   addl $12,%esp
+   
+   push $p
+   push $formatScanf
+   pushl inputFilePointer
+   call fscanf
+   addl $12,%esp
+   
+   movl $0, index
+   movl m,%ebx
+   movl %ebx,mCopy
+   movl n,%ebx
+   movl %ebx,nCopy
+   addl $2,mCopy
+   addl $2,nCopy
+   
 et_for:
-    movl index, %ecx
-    cmp %ecx,p
-    je ceva
-    
-    push $left
-    push $formatScanf
-    call scanf
-    addl $8,%esp
-    
-    push $right
-    push $formatScanf
-    call scanf
-    addl $8,%esp
-    
-    addl $1,left
-    addl $1,right
-    
-    movl left,%eax
-    movl $0,%edx
-    mull nCopy
-    addl right,%eax
+   movl index, %ecx
+   cmp %ecx,p
+   je ceva   
+   
+   push $left
+   push $formatScanf
+   pushl inputFilePointer
+   call fscanf
+   addl $12,%esp
 
-    lea matrix, %edi
-    movl $1, (%edi,%eax,4)
+   push $right
+   push $formatScanf
+   pushl inputFilePointer
+   call fscanf
+   addl $12,%esp
+   
+   addl $1,left
+   addl $1,right
+    
+   movl left,%eax
+   movl $0,%edx
+   mull nCopy
+   addl right,%eax
 
-    incl index
-    jmp et_for
+   lea matrix, %edi
+   movl $1, (%edi,%eax,4)
 
+   incl index
+   jmp et_for
+   
 ceva:
    push $k
    push $formatScanf
-   call scanf
-   addl $8,%esp
+   pushl inputFilePointer
+   call fscanf
+   addl $12,%esp
    
    movl $1,%ebx
    movl %ebx,left
@@ -98,7 +123,8 @@ ceva:
    movl %ebx,index
    subl $1,index
    
-   incl k
+   incl k   
+
 rezolvare:
    movl $1,left
    incl ct
@@ -347,8 +373,7 @@ crestere:
       jmp for_lines1
 crestere2:
       incl lineIndex
-      jmp for_lines2    
-
+      jmp for_lines2
 et_afis_matr:
    movl $1,lineIndex
    for_lines:
@@ -371,14 +396,16 @@ et_afis_matr:
            movl (%edi,%eax,4), %ebx
            movl %ebx,valoare
            
-           push valoare
-           push $formatPrintf
-           call printf
-           addl $8,%esp
-
-           push $0
-           call fflush
-           addl $4,%esp
+   	   push valoare
+   	   push $formatPrintf
+   	   push outputFilePointer
+   	   call fprintf
+   	   addl $12,%esp
+   	   
+   
+   	   push $0
+   	   call fflush
+   	   addl $4,%esp
  
 
            incl columnIndex
@@ -386,16 +413,24 @@ et_afis_matr:
 
 
         cont:
-          movl $4,%eax
-          movl $1,%ebx
-          movl $newLine,%ecx
-          movl $2,%edx
-          int $0x80
-          
+          push $newLine
+   	  push outputFilePointer
+   	  call fprintf
+   	  addl $8,%esp
+   	  
+   	  push $0
+   	  call fflush
+   	  addl $4,%esp
+   	   
           incl lineIndex
           jmp for_lines
 
           et_exit:
-           movl $1,%eax
-           movl $0,%ebx
-           int $0x80
+          pushl outputFilePointer
+          call fclose
+          pushl inputFilePointer
+          call fclose
+          movl $1,%eax
+          movl $0,%ebx
+          int $0x80   
+
